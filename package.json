@@ -1,0 +1,47 @@
+{
+  "name": "libphonenumber-metadata-generator",
+  "version": "1.0.1",
+  "description": "Metadata generator for `libphonenumber-js`",
+  "main": "index.commonjs.js",
+  "module": "index.js",
+  "sideEffects": false,
+  "dependencies": {
+    "minimist": "^1.2.5",
+    "xml2js": "^0.4.17"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.4.4",
+    "@babel/core": "^7.4.5",
+    "@babel/preset-env": "^7.4.5",
+    "crlf": "^1.1.1",
+    "cross-env": "^5.2.0",
+    "npm-run-all": "^1.4.0",
+    "rimraf": "^2.5.0"
+  },
+  "scripts": {
+    "clean": "rimraf ./commonjs/**/* ./modules/**/*",
+    "build:commonjs": "cross-env BABEL_ENV=commonjs babel ./source --out-dir ./commonjs --source-maps --ignore test.js",
+    "build:modules": "cross-env BABEL_ENV=es6 babel ./source --out-dir ./modules --source-maps --ignore test.js",
+    "build": "npm-run-all clean build:commonjs build:modules",
+    "prepublish": "crlf --set=LF bin/* && npm-run-all build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://gitlab.com/catamphetamine/libphonenumber-metadata-generator.git"
+  },
+  "keywords": [
+    "libphonenumber",
+    "metadata",
+    "generate",
+    "generator"
+  ],
+  "author": "catamphetamine <purecatamphetamine@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://gitlab.com/catamphetamine/libphonenumber-metadata-generator/issues"
+  },
+  "homepage": "https://gitlab.com/catamphetamine/libphonenumber-metadata-generator#readme",
+  "bin": {
+    "libphonenumber-metadata-generator": "./bin/generate-metadata.js"
+  }
+}

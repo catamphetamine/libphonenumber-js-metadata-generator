@@ -1,0 +1,36 @@
+# git
+.gitignore
+.gitattributes
+
+# Babel
+babel.config.js
+
+# Travis CI
+.travis.yml
+
+# test coverage folder
+/coverage/
+
+# npm errors
+npm-debug.log
+
+# for OS X users
+.DS_Store
+
+# cache files for sublime text
+*.tmlanguage.cache
+*.tmPreferences.cache
+*.stTheme.cache
+
+# workspace files are user-specific
+*.sublime-workspace
+*.sublime-project
+
+# tests aren't needed for npm
+/test/
+
+# GitLab pages
+/website/
+
+# code coverage
+.nyc_output
