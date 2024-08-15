@@ -11,7 +11,7 @@ const PHONE_NUMBER_TYPES = [
 	'personal_number',
 	'pager',
 	'uan',
-	'voice_mail',
+	'voicemail',
 	'fixed_line',
 	'mobile'
 ]

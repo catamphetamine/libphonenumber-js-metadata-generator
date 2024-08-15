@@ -30,7 +30,7 @@ The arguments are:
 
 * `--extended` argument may be passed to include all regular expressions for precise phone number validation and getting phone number type, which will enlarge the resulting metadata size approximately twice.
 
-* `--types ...` argument may be passed instead of `--extended` to generate metadata that _only_ supports the selected phone number types (a comma-separated list, e.g. `--types mobile,fixed_line`). [See the list of all possible phone number types](https://gitlab.com/catamphetamine/libphonenumber-js/blob/master/source/tools/generate.js#L6-L18). Other phone number types will still be parseable, but they won't be recognized as being "valid" (`.isValid()` will return `false`), and also their "type" won't be detected (`.getType()` will return `undefined`).
+* `--types ...` argument may be passed instead of `--extended` to generate metadata that _only_ supports the selected phone number types (a comma-separated list, e.g. `--types mobile,fixed_line`). [See the list of all possible phone number types](https://gitlab.com/catamphetamine/libphonenumber-metadata-generator/-/blob/master/source/generate.js#L6-17). Other phone number types will still be parseable, but they won't be recognized as being "valid" (`.isValid()` will return `false`), and also their "type" won't be detected (`.getType()` will return `undefined`).
 
 ## Versioning
 

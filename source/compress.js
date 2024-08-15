@@ -54,7 +54,7 @@ function compressNumberingPlan(country) {
 			country.types.personal_number,
 
 			// These are less common
-			country.types.voice_mail,
+			country.types.voicemail,
 			country.types.uan,
 			country.types.pager,
 			country.types.voip,
