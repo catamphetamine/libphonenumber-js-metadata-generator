@@ -44,10 +44,18 @@ if (command_line_arguments.types) {
 	included_phone_number_types = new Set(included_phone_number_types)
 }
 
+https://github.com/google/libphonenumber/archive/refs/tags/v9.0.12.zip
+
 // Download the latest `PhoneNumberMetadata.xml`
 // from Google's `libphonenumber` github repository.
-download('https://raw.githubusercontent.com/googlei18n/libphonenumber/master/resources/PhoneNumberMetadata.xml')
-	.then(function(xml) {
+download()
+	.then(function({ version: metadataVersion, changes: metadataChanges, xml }) {
+		// Print the metadata version and a list of changes.
+		console.log('========================================')
+		console.log(`= Metadata version: ${metadataVersion}`)
+		console.log(`= Changes:\n${metadataChanges.map(_ => '= * ' + _)}`)
+		console.log('========================================')
+
 		// Generate and compress metadata
 		return generate(xml, version, included_countries, extended, included_phone_number_types)
 	})
