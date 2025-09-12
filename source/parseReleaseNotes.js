@@ -17,7 +17,7 @@ export default function parseReleaseNotes(text) {
 	// Example: "Aug 13, 2025: v9.0.12"
 	const latestReleasedVersionMatch = dateAndVersion.match(/[A-Za-z]+ \d+, \d{4}: v([\d\.]+)$/)
 	if (!latestReleasedVersionMatch) {
-		throw new Error(`Latest release version not found in Google's release notes: ${firstLine}`)
+		throw new Error(`Latest release version not found in Google's release notes: ${dateAndVersion}`)
 	}
 	// Example: "9.0.12".
 	const latestReleasedVersion = latestReleasedVersionMatch[1]
