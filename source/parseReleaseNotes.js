@@ -23,7 +23,7 @@ export default function parseReleaseNotes(text, versionsInfo = []) {
 
 			// Add this version's info to the list and proceed recursively.
 			versionsInfo = versionsInfo.concat([{
-				date: Date.UTC(date.year, date.month - 1, date.day),
+				date,
 				version,
 				changes: metadataChanges
 			}])
@@ -110,11 +110,11 @@ function parseDateAndVersion(dateAndVersion) {
 	let match = dateAndVersion.match(DATE_AND_VERSION_REGEXP_3)
 	if (match) {
 		return {
-			date: {
-				month: getMonthNumber(match[1]),
-				day: getDayNumber(match[2]),
-				year: getYearNumber(match[3])
-			},
+			date: new Date(Date.UTC(
+				getYearNumber(match[3]),
+				getMonthNumber(match[1]) - 1,
+				getDayNumber(match[2])
+			)),
 			version: match[4]
 		}
 	}
@@ -123,11 +123,11 @@ function parseDateAndVersion(dateAndVersion) {
 	match = dateAndVersion.match(DATE_AND_VERSION_REGEXP_2)
 	if (match) {
 		return {
-			date: {
-				month: getMonthNumber(match[1]),
-				day: getDayNumber(match[2]),
-				year: getYearNumber(match[3])
-			},
+			date: new Date(Date.UTC(
+				getYearNumber(match[3]),
+				getMonthNumber(match[1]) - 1,
+				getDayNumber(match[2])
+			)),
 			version: match[4]
 		}
 	}
@@ -136,11 +136,11 @@ function parseDateAndVersion(dateAndVersion) {
 	match = dateAndVersion.match(DATE_AND_VERSION_REGEXP_1)
 	if (match) {
 		return {
-			date: {
-				month: getMonthNumber(match[1]),
-				day: getDayNumber(match[2]),
-				year: getYearNumber(match[3])
-			},
+			date: new Date(Date.UTC(
+				getYearNumber(match[3]),
+				getMonthNumber(match[1]) - 1,
+				getDayNumber(match[2])
+			)),
 			version: match[4]
 		}
 	}

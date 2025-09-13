@@ -17,7 +17,7 @@ Metadata changes:
    597 (en), 680 (en)
  - Updated / refreshed time zone meta data.`
 		)).to.deep.equal([{
-			date: Date.UTC(2025, 0, 13),
+			date: new Date(Date.UTC(2025, 0, 13)),
 			version: '8.13.53',
 			changes: [
 				'Updated phone metadata for region code(s):\nEH, IL, LV, MA, MK, MM, MU, PW, SO',
@@ -33,7 +33,7 @@ Metadata changes:
 Code changes:
  - Fixed a bug where the extension was appended twice in formatOutOfCountryKeepingAlphaChars in the Java version and updated FormatOutOfCountryKeepingAlphaChars in the C++ version to format the extension.`
 		)).to.deep.equal([{
-			date: Date.UTC(2025, 0, 13),
+			date: new Date(Date.UTC(2025, 0, 13)),
 			version: '8.13.53',
 			changes: []
 		}])
@@ -79,7 +79,7 @@ July 30th, 2010
   - China local number formatting for AsYouTypeFormatter
   - improve extension parsing to handle number in the form of +1 (645) 123 1234 ext. 910#`
 		)).to.deep.equal([{
-			date: Date.UTC(2025, 1, 13),
+			date: new Date(Date.UTC(2025, 1, 13)),
 			version: '8.13.55',
 			changes: [
 				'Updated phone metadata for region code(s): BE, CZ, SR',
@@ -87,7 +87,7 @@ July 30th, 2010
 				'Updated carrier data for country calling code(s):\n33 (en), 41 (en), 255 (en), 351 (en), 503 (en), 597 (en)'
 			]
 		}, {
-			date: Date.UTC(2025, 0, 29),
+			date: new Date(Date.UTC(2025, 0, 29)),
 			version: '8.13.54',
 			changes: [
 				'Updated phone metadata for region code(s): HK, ML, NC, PL, US',
@@ -96,7 +96,7 @@ July 30th, 2010
 				'Updated / refreshed time zone meta data.'
 			]
 		}, {
-			date: Date.UTC(2011, 7, 11),
+			date: new Date(Date.UTC(2011, 7, 11)),
 			version: '3.8',
 			changes: []
 			// changes: [
@@ -108,7 +108,7 @@ July 30th, 2010
 			// 	'Split geocoding US binary data into multiple files.'
 			// ]
 		}, {
-			date: Date.UTC(2010, 6, 30),
+			date: new Date(Date.UTC(2010, 6, 30)),
 			version: undefined,
 			changes: []
 			// changes: [
