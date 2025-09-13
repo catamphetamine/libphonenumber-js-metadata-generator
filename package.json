@@ -1,6 +1,6 @@
 {
   "name": "libphonenumber-metadata-generator",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Metadata generator for `libphonenumber-js`",
   "main": "index.commonjs.js",
   "module": "index.js",
