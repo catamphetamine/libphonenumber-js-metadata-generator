@@ -16,8 +16,13 @@ const PHONE_NUMBER_TYPES = [
 	'mobile'
 ]
 
-// Excessive fields from "PhoneNumberMetadata.xml"
-// aren't included to reduce code complexity and size:
+// Parses `PhoneNumberMetadata.xml` file from Google's `libphonenumber` GitHub repository
+// into a JSON structure, removing unused pieces of data in the process.
+//
+// -----------------------------------------------------------------------------------
+//
+// The following elements or attributes from "PhoneNumberMetadata.xml" are discarded
+// in order to reduce code complexity and metadata file size:
 //
 // * `<references>` — a link to ITU (International Telecommunication Union)
 //                    document describing phone numbering plan for a country
@@ -59,10 +64,14 @@ const PHONE_NUMBER_TYPES = [
 //                         whether a phone number format can be used to format
 //                         a particular national (significant) phone number.
 //
-// `libphonenumber/BuildMetadataFromXml.java` was used as a reference.
+// -----------------------------------------------------------------------------------
+//
+// `libphonenumber/BuildMetadataFromXml.java` XML metadata parser was used as a reference.
 // https://github.com/googlei18n/libphonenumber/blob/master/tools/java/common/src/com/google/i18n/phonenumbers/BuildMetadataFromXml.java
 //
-// There are three Xml metadata files in Google's `libphonenumber`:
+// -----------------------------------------------------------------------------------
+//
+// There are three XML metadata files in Google's `libphonenumber`:
 //
 //  * PhoneNumberMetadata.xml — core data, used both for parse/format and "as you type"
 //
@@ -77,6 +86,8 @@ const PHONE_NUMBER_TYPES = [
 //                                      and how it works in the original `libphonenumber` code.
 //
 //  * ShortNumberMetadata.xml — emergency numbers, etc. not used in this library.
+//
+// -----------------------------------------------------------------------------------
 //
 // @returns
 //
@@ -300,9 +311,10 @@ export default function(xmlString, version, includedCountries, extended, include
 				//
 				domestic_carrier_code_formatting_rule: territory.$.carrierCodeFormattingRule,
 
-				// These `types` will be purged later,
-				// if they're not needed (which is most likely).
-				// See `country_calling_code_to_countries` ambiguity for more info.
+				// These `types` will be discared later if they're not needed (which is most likely).
+				// They're currently only used when there're multiple countries corresponding to the same calling code.
+				// In such cases, it's not possible to determine the country of a phone number just by its "calling code" part,
+				// and it has to be matched against each "candidate" country by either its `leading_digits` or by its `types` reg exps.
 				//
 				types: get_PHONE_NUMBER_TYPES(territory),
 
@@ -443,18 +455,18 @@ export default function(xmlString, version, includedCountries, extended, include
 				populateNumberingPlanPossibleLengths(countries[country_code])
 
 				if (countries[country_code].possible_lengths.length === 0) {
-					throw new Error(`No "possibleLengths" set for country "${country_code}". "react-phone-number-input" relies on "possibleLengths" being always present.`)
+					throw new Error(`No \`possibleLengths\` are specified for country "${country_code}". That could become an issue because, for example, \`react-phone-number-input\` package relies on \`possibleLengths\` to always be specified.`)
 				}
 			}
 
-			// Purge `types` regular expressions (they are huge)
-			// when they're not needed for resolving country phone code
-			// to country phone number matching.
+			// Discard `types` regular expressions (they are huge)
+			// when they're not needed when determining phone number country.
 			// E.g. when there's a one-to-one correspondence
 			// between a country phone code and a country code
 			const all_types_required = country_codes.length > 1
 
 			if (!extended && !includedPhoneNumberTypes && !all_types_required) {
+				console.log(`Won't include the regular expressions for different phone number types for country ${country_code} because it doesn't share its calling code with any other country, and, therefore, the regular expressions for different phone number types won't have to be used for country matching`)
 				delete countries[country_codes[0]].types
 				continue
 			}
@@ -466,6 +478,7 @@ export default function(xmlString, version, includedCountries, extended, include
 				// is not required in this case.
 				if (!extended && !includedPhoneNumberTypes) {
 					if (countries[country_code].leading_digits) {
+						console.log(`Won't include the regular expressions for different phone number types for country ${country_code} because even though it does share its calling code with other countries, it also has leading digits specified, and, therefore, the regular expressions for different phone number types won't have to be used for country matching`)
 						delete countries[country_code].types
 						continue
 					}
@@ -493,8 +506,10 @@ export default function(xmlString, version, includedCountries, extended, include
 					// (other types having the same regular expressions as this one)
 					else {
 						// Sometimes fixed line pattern is the same as for mobile.
-						if (types.fixed_line && types.mobile &&
-							types.fixed_line.pattern === types.mobile.pattern) {
+						if (
+							types.fixed_line && types.mobile &&
+							types.fixed_line.pattern === types.mobile.pattern
+						) {
 							types.mobile.pattern = ''
 						}
 					}

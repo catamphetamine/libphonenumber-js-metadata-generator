@@ -1,3 +1,5 @@
+// Compresses metadata: converts each individual country's metadata
+// from a JSON object with verbose property names to a positional array.
 export default function compress(metadata) {
 	const countries = {}
 	for (const countryCode of Object.keys(metadata.countries)) {

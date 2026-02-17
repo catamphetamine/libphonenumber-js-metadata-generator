@@ -1,3 +1,4 @@
+// Parses `release_notes.txt` file from Google's `libphonenumber` GitHub repository.
 export default function parseReleaseNotes(text, versionsInfo = []) {
 	// Get a block of release notes that describes a released version.
 	const [versionNotes, restText] = getVersionNotes(text)

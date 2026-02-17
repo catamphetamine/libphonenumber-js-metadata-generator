@@ -1,6 +1,7 @@
 import parseReleaseNotes from './parseReleaseNotes'
 import downloadFile from './downloadFile'
 
+// Downloads `PhoneNumberMetadata.xml` file from Google's `libphonenumber` GitHub repository.
 export default function downloadPhoneNumberMetadataXml() {
 	return downloadPhoneNumberMetadataXmlForLatestReleaseFromGitHub()
 }
@@ -16,11 +17,12 @@ const METADATA_XML_URL_TEMPLATE = 'https://raw.githubusercontent.com/google/libp
 
 // Downloads the latest released revision of `PhoneNumberMetadata.xml` file from Google's GitHub releases.
 function downloadPhoneNumberMetadataXmlForLatestReleaseFromGitHub() {
+	console.log('Downloading `release_notes.txt` file from Google\'s `libphonenumber` GitHub repository')
 	return downloadFile(RELEASE_NOTES_URL)
 		.then((releaseNotes) => {
 			if (releaseNotes === FILE_NOT_FOUND_CONTENT) {
 				throw new FileNotFoundError(
-					'`release_notes.txt` file was not found in Google\'s git repository',
+					'`release_notes.txt` file was not found in Google\'s `libphonenumber` GitHub repository',
 					RELEASE_NOTES_URL
 				)
 			}
@@ -29,8 +31,11 @@ function downloadPhoneNumberMetadataXmlForLatestReleaseFromGitHub() {
 			const releasedVersionsInfo = parseReleaseNotes(releaseNotes)
 			// If not a single release notes entry has been parsed, throw an error.
 			if (releasedVersionsInfo.length === 0) {
-				throw new Error('Couldn\'t parse released versions\' entries from Google\'s release notes')
+				throw new Error('Couldn\'t parse released versions\' entries from `release_notes.txt` in Google\'s `libphonenumber` GitHub repository')
 			}
+
+			console.log('Latest released version of Google\'s `libphonenumber`: ' + releasedVersionsInfo[0].version)
+			console.log('Downloading `PhoneNumberMetadata.xml` for that version')
 
 			// Download metadata XML.
 			//
@@ -61,7 +66,7 @@ function downloadPhoneNumberMetadataXmlForLatestReleaseFromGitHub() {
 										// If the prevoius release metadata file was not found
 										// then it seems like some kind of an unusual error.
 										if (error instanceof FileNotFoundError) {
-											throw new Error(`Neither tag "${GOOGLE_REPOSITORY_TAG_NAME_TEMPLATE.replace('{version}', releasedVersionsInfo[0].version)}" nor tag "${GOOGLE_REPOSITORY_TAG_NAME_TEMPLATE.replace('{version}', releasedVersionsInfo[1].version)}" were found in Google's git repository. This is not supposed to happen.`)
+											throw new Error(`Neither tag "${GOOGLE_REPOSITORY_TAG_NAME_TEMPLATE.replace('{version}', releasedVersionsInfo[0].version)}" nor tag "${GOOGLE_REPOSITORY_TAG_NAME_TEMPLATE.replace('{version}', releasedVersionsInfo[1].version)}" were found in Google's \`libphonenumber\` GitHub repository. This is not supposed to happen.`)
 										} else {
 											throw error
 										}
@@ -78,6 +83,7 @@ function downloadPhoneNumberMetadataXmlForLatestReleaseFromGitHub() {
 // Downloads the latest `PhoneNumberMetadata.xml` file from Google's GitHub repository,
 // regardless of whether this XML file has been released yet or not.
 function downloadPhoneNumberMetadataXmlFromGitHub() {
+	console.log('Downloading latest `PhoneNumberMetadata.xml` from Google\'s `libphonenumber` GitHub repository')
 	return download('https://raw.githubusercontent.com/googlei18n/libphonenumber/master/resources/PhoneNumberMetadata.xml')
 		.then((xml) => {
 			return {
@@ -100,7 +106,7 @@ function downloadMetadataXmlForReleaseVersion(version) {
 		.then((xml) => {
 			if (xml === FILE_NOT_FOUND_CONTENT) {
 				throw new FileNotFoundError(
-					`Tag "v${version}" was not found in Google's git repository. Perhaps it hasn't been created yet. Try again later.`,
+					`Tag "v${version}" was not found in Google's \`libphonenumber\` GitHub repository. Perhaps it hasn't been created yet. Try again later.`,
 					metadataXmlUrl
 				)
 			}
