@@ -466,7 +466,7 @@ export default function(xmlString, version, includedCountries, extended, include
 			const all_types_required = country_codes.length > 1
 
 			if (!extended && !includedPhoneNumberTypes && !all_types_required) {
-				console.log(`Won't include the regular expressions for different phone number types for country ${country_code} because it doesn't share its calling code with any other country, and, therefore, the regular expressions for different phone number types won't have to be used for country matching`)
+				// console.log(`Won't include the regular expressions for different phone number types for country ${country_code} because it doesn't share its calling code with any other country, and, therefore, the regular expressions for different phone number types won't have to be used for country matching`)
 				delete countries[country_codes[0]].types
 				continue
 			}
@@ -478,7 +478,7 @@ export default function(xmlString, version, includedCountries, extended, include
 				// is not required in this case.
 				if (!extended && !includedPhoneNumberTypes) {
 					if (countries[country_code].leading_digits) {
-						console.log(`Won't include the regular expressions for different phone number types for country ${country_code} because even though it does share its calling code with other countries, it also has leading digits specified, and, therefore, the regular expressions for different phone number types won't have to be used for country matching`)
+						// console.log(`Won't include the regular expressions for different phone number types for country ${country_code} because even though it does share its calling code with other countries, it also has leading digits specified, and, therefore, the regular expressions for different phone number types won't have to be used for country matching`)
 						delete countries[country_code].types
 						continue
 					}

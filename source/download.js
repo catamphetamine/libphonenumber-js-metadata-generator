@@ -17,7 +17,7 @@ const METADATA_XML_URL_TEMPLATE = 'https://raw.githubusercontent.com/google/libp
 
 // Downloads the latest released revision of `PhoneNumberMetadata.xml` file from Google's GitHub releases.
 function downloadPhoneNumberMetadataXmlForLatestReleaseFromGitHub() {
-	console.log('Downloading `release_notes.txt` file from Google\'s `libphonenumber` GitHub repository')
+	// console.log('Downloading `release_notes.txt` file from Google\'s `libphonenumber` GitHub repository')
 	return downloadFile(RELEASE_NOTES_URL)
 		.then((releaseNotes) => {
 			if (releaseNotes === FILE_NOT_FOUND_CONTENT) {
@@ -34,8 +34,8 @@ function downloadPhoneNumberMetadataXmlForLatestReleaseFromGitHub() {
 				throw new Error('Couldn\'t parse released versions\' entries from `release_notes.txt` in Google\'s `libphonenumber` GitHub repository')
 			}
 
-			console.log('Latest released version of Google\'s `libphonenumber`: ' + releasedVersionsInfo[0].version)
-			console.log('Downloading `PhoneNumberMetadata.xml` for that version')
+			// console.log('Latest released version of Google\'s `libphonenumber`: ' + releasedVersionsInfo[0].version)
+			// console.log('Downloading `PhoneNumberMetadata.xml` for that version')
 
 			// Download metadata XML.
 			//
@@ -83,7 +83,7 @@ function downloadPhoneNumberMetadataXmlForLatestReleaseFromGitHub() {
 // Downloads the latest `PhoneNumberMetadata.xml` file from Google's GitHub repository,
 // regardless of whether this XML file has been released yet or not.
 function downloadPhoneNumberMetadataXmlFromGitHub() {
-	console.log('Downloading latest `PhoneNumberMetadata.xml` from Google\'s `libphonenumber` GitHub repository')
+	// console.log('Downloading latest `PhoneNumberMetadata.xml` from Google\'s `libphonenumber` GitHub repository')
 	return download('https://raw.githubusercontent.com/googlei18n/libphonenumber/master/resources/PhoneNumberMetadata.xml')
 		.then((xml) => {
 			return {
