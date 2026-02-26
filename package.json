@@ -25,7 +25,8 @@
     "build:commonjs": "cross-env BABEL_ENV=commonjs babel ./source --out-dir ./commonjs --source-maps --ignore test.js",
     "build:modules": "cross-env BABEL_ENV=es6 babel ./source --out-dir ./modules --source-maps --ignore test.js",
     "build": "npm-run-all clean build:commonjs build:modules",
-    "test": "mocha --reporter spec --colors --bail --exit --recursive \"./{,!(node_modules)/**/}*.test.js\"",
+    "test": "mocha --bail \"source/**/*.test.js\" \"test/*.test.js\" \"test/!(exports)/**/*.test.js\"",
+    "test:exports": "mocha --bail \"test/exports/**/*.test.js\"",
     "prepublishOnly": "crlf --set=LF bin/* && npm-run-all build"
   },
   "repository": {
