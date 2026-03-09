@@ -8,7 +8,8 @@ export default function downloadPhoneNumberMetadataXml() {
 
 // This is what `raw.githubusercontent.com` server returns with HTTP status code 200
 // when requesting a file that doesn't exist.
-const FILE_NOT_FOUND_CONTENT = '404: Not Found'
+const FILE_NOT_FOUND_RESPONSE_CONTENT = '404: Not Found'
+const TOO_MANY_REQUESTS_RESPONSE_CONTENT = '429: Too Many Requests\nFor more on scraping GitHub and how it may affect your rights, please review our Terms of Service (https://docs.github.com/en/site-policy/github-terms/github-terms-of-service).'
 
 const RELEASE_NOTES_URL = 'https://raw.githubusercontent.com/googlei18n/libphonenumber/master/release_notes.txt'
 
@@ -20,9 +21,16 @@ function downloadPhoneNumberMetadataXmlForLatestReleaseFromGitHub() {
 	// console.log('Downloading `release_notes.txt` file from Google\'s `libphonenumber` GitHub repository')
 	return downloadFile(RELEASE_NOTES_URL)
 		.then((releaseNotes) => {
-			if (releaseNotes === FILE_NOT_FOUND_CONTENT) {
+			if (releaseNotes === FILE_NOT_FOUND_RESPONSE_CONTENT) {
 				throw new FileNotFoundError(
 					'`release_notes.txt` file was not found in Google\'s `libphonenumber` GitHub repository',
+					RELEASE_NOTES_URL
+				)
+			}
+
+			if (releaseNotes === TOO_MANY_REQUESTS_RESPONSE_CONTENT) {
+				throw new TooManyRequestsError(
+					'Couldn\'t download `release_notes.txt` from Google\'s `libphonenumber` GitHub repository. The download was blocked by GitHub\'s anti-scraping mechanism. The error was: "Too Many Requests".',
 					RELEASE_NOTES_URL
 				)
 			}
@@ -104,10 +112,16 @@ function downloadMetadataXmlForReleaseVersion(version) {
 	const metadataXmlUrl = METADATA_XML_URL_TEMPLATE.replace('{tag}', tag)
 	return downloadFile(metadataXmlUrl)
 		.then((xml) => {
-			if (xml === FILE_NOT_FOUND_CONTENT) {
+			if (xml === FILE_NOT_FOUND_RESPONSE_CONTENT) {
 				throw new FileNotFoundError(
 					`Tag "v${version}" was not found in Google's \`libphonenumber\` GitHub repository. Perhaps it hasn't been created yet. Try again later.`,
 					metadataXmlUrl
+				)
+			}
+			if (xml === TOO_MANY_REQUESTS_RESPONSE_CONTENT) {
+				throw new TooManyRequestsError(
+					`Couldn't download files from "v${version}" tag of Google's \`libphonenumber\` GitHub repository. The download was blocked by GitHub\'s anti-scraping mechanism. The error was: "Too Many Requests".`,
+					RELEASE_NOTES_URL
 				)
 			}
 			return xml
@@ -115,6 +129,13 @@ function downloadMetadataXmlForReleaseVersion(version) {
 }
 
 class FileNotFoundError extends Error {
+	constructor(message, url) {
+		super(message)
+		this.url = url
+	}
+}
+
+class TooManyRequestsError extends Error {
 	constructor(message, url) {
 		super(message)
 		this.url = url
