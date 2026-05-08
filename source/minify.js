@@ -1,13 +1,13 @@
-// Compresses metadata: converts each individual country's metadata
-// from a JSON object with verbose property names to a positional array.
-export default function compress(metadata) {
+// Minifies metadata: converts objects to positional arrays
+// and removes example phone numbers.
+export default function minify(metadata) {
 	const countries = {}
 	for (const countryCode of Object.keys(metadata.countries)) {
-		countries[countryCode] = compressNumberingPlan(metadata.countries[countryCode])
+		countries[countryCode] = minifyTelephoneNumberingPlan(metadata.countries[countryCode])
 	}
 	const nonGeographic = {}
 	for (const callingCode of Object.keys(metadata.nonGeographic)) {
-		nonGeographic[callingCode] = compressNumberingPlan(metadata.nonGeographic[callingCode])
+		nonGeographic[callingCode] = minifyTelephoneNumberingPlan(metadata.nonGeographic[callingCode])
 	}
 	return {
 		version: metadata.version,
@@ -17,7 +17,7 @@ export default function compress(metadata) {
 	}
 }
 
-function compressNumberingPlan(country) {
+function minifyTelephoneNumberingPlan(country) {
 	// When changing this array also change getters in `./metadata.js`
 	const country_array = [
 		country.phone_code,

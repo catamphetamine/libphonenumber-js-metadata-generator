@@ -6,70 +6,119 @@ var minimist = require('minimist')
 
 var download = require('../commonjs/download').default
 var generate = require('../commonjs/generate').default
-var compress = require('../commonjs/compress').default
-var version = require('../commonjs/version').default
+var minify   = require('../commonjs/minify').default
 
-var metadata_path = process.argv[2]
+var output_file_path = process.argv[2]
 
-if (!metadata_path) {
+if (!output_file_path) {
 	return usage('Path to the output metadata file not specified')
 }
 
-metadata_path = path.resolve(metadata_path)
+output_file_path = path.resolve(output_file_path)
 
-console.log('Metadata path:', metadata_path)
+console.log('Metadata output path:', output_file_path)
 
 var command_line_arguments = minimist(process.argv.slice(3))
+
+// Whether it should output non-minified metadata or not
+var non_minified = false
+if (command_line_arguments['non-minified']) {
+	console.log('Output non-minified metadata')
+	non_minified = true
+}
 
 // Included countries
 var included_countries
 if (command_line_arguments.countries) {
 	included_countries = command_line_arguments.countries.split(',')
 	console.log('Included countries:', included_countries)
-	included_countries = new Set(included_countries)
 }
 
-// Include all regular expressions
-var extended = false
-if (command_line_arguments.extended) {
-	console.log('Include extra validation regular expressions')
-	extended = true
+// Whether it should include the regular expressions for phone number types or not
+var with_phone_number_types = false
+if (command_line_arguments['with-phone-number-types']) {
+	console.log('Include regular expressions for phone number types')
+	with_phone_number_types = true
 }
 
 // Included phone number types
 var included_phone_number_types
-if (command_line_arguments.types) {
-	included_phone_number_types = command_line_arguments.types.split(',')
+if (command_line_arguments['phone-number-types']) {
+	if (!with_phone_number_types) {
+		throw new Error('`--phone-number-types` argument requires `--with-phone-number-types` argument')
+	}
+	included_phone_number_types = command_line_arguments['phone-number-types'].split(',')
 	console.log('Included phone number types:', included_phone_number_types)
-	included_phone_number_types = new Set(included_phone_number_types)
 }
 
-https://github.com/google/libphonenumber/archive/refs/tags/v9.0.12.zip
+// Whether it should include example phone numbers
+var with_phone_number_type_examples = false
+if (command_line_arguments['with-phone-number-type-examples']) {
+	with_phone_number_type_examples = true
+	console.log('Include phone number type examples')
+	if (!non_minified) {
+		console.warn('Phone number type examples will be removed at the minification stage')
+	}
+}
+
+// // Included phone number type examples
+// var included_phone_number_type_examples
+// if (command_line_arguments['phone-number-type-examples']) {
+// 	if (!with_phone_number_type_examples) {
+// 		throw new Error('`--phone-number-type-examples` argument requires `--with-phone-number-type-examples` argument')
+// 	}
+// 	included_phone_number_type_examples = command_line_arguments['phone-number-type-examples'].split(',')
+// 	console.log('Included phone number type examples:', included_phone_number_type_examples)
+// }
+
+// (legacy argument: --extended)
+// Whether it should include the regular expressions for all phone number types or not
+if (command_line_arguments.extended) {
+	console.log('Include regular expressions for all phone number types')
+	with_phone_number_types = true
+}
+
+// (legacy argument: --types)
+// Included phone number types
+if (command_line_arguments.types) {
+	with_phone_number_types = true
+	included_phone_number_types = command_line_arguments.types.split(',')
+	console.log('Include regular expressions for phone number types:', included_phone_number_types)
+}
 
 // Download the latest `PhoneNumberMetadata.xml`
 // from Google's `libphonenumber` github repository.
 download()
-	.then(function({ version: metadataVersion, changes: metadataChanges, xml }) {
+	.then(function({ version: metadataVersion, changes: metadataChanges, xml: metadataXml }) {
 		// Print the metadata version and a list of changes.
 		console.log('========================================')
 		console.log(`= Metadata version: ${metadataVersion}`)
-		console.log(`= Changes:\n${metadataChanges.map(_ => '= * ' + _)}`)
+		console.log(`= Changes:\n${metadataChanges.map(_ => '= * ' + _).join('\n')}`)
 		console.log('========================================')
 
-		// Generate and compress metadata
-		return generate(xml, version, included_countries, extended, included_phone_number_types)
+		// Generate and minify metadata
+		return generate(metadataXml, {
+			countries: included_countries,
+			withPhoneNumberTypes: with_phone_number_types,
+			phoneNumberTypes: included_phone_number_types,
+			withPhoneNumberTypeExamples: with_phone_number_type_examples
+		})
 	})
-	.then(function(output) {
-		// Compare metadata
-		var previous_metadata = fs.existsSync(metadata_path) && fs.readFileSync(metadata_path, 'utf8')
-		var new_metadata = JSON.stringify(compress(output))
+	.then(function(metadataJson) {
+		// Compare old and new metadata.
+		var previous_metadata = fs.existsSync(output_file_path)
+			? fs.readFileSync(output_file_path, 'utf8')
+			: undefined
+		var new_metadata = non_minified
+			? JSON.stringify(metadataJson, undefined, 2)
+			: JSON.stringify(minify(metadataJson))
 
 		if (!previous_metadata || previous_metadata !== new_metadata) {
 			console.log('========================================')
 			console.log('=       Metadata has been updated      =')
 			console.log('========================================')
 			// Write the new metadata to file
-			fs.writeFileSync(metadata_path, new_metadata)
+			fs.writeFileSync(output_file_path, new_metadata)
 		}
 	})
 	.catch(function(error) {
@@ -85,7 +134,7 @@ function usage(reason) {
 
 	console.log('Usage:')
 	console.log('')
-	console.log('libphonenumber-generate-metadata <path-to-the-output-metadata.min.json> [options]')
+	console.log('libphonenumber-generate-metadata <path-to-the-output-json-file> [options]')
 	console.log('')
 	console.log('Options:')
 	console.log('')
@@ -93,9 +142,21 @@ function usage(reason) {
 	console.log('')
 	console.log('               Example: "--countries RU,FR,DE"')
 	console.log('')
-	console.log('   extended - Include all the extra regular expressions for more precise phone number validation')
+	console.log('   with-phone-number-types - Include the regular expressions for more precise phone number validation and determining phone number type')
 	console.log('')
-	console.log('              Example: "--extended"')
+	console.log('              Example: "--with-phone-number-types"')
+	console.log('')
+	console.log('   phone-number-types - Include the regular expressions for only specific phone number types')
+	console.log('')
+	console.log('              Example: "--with-phone-number-types --phone-number-types mobile,fixed_line"')
+	console.log('')
+	console.log('   with-phone-number-type-examples - Includes phone number examples (one for each phone number type)')
+	console.log('')
+	console.log('              Example: "--with-phone-number-type-examples"')
+	console.log('')
+	console.log('   non-minified - Outputs non-minified metadata')
+	console.log('')
+	console.log('              Example: "--non-minified"')
 
 	if (reason) {
 		return process.exit(1)

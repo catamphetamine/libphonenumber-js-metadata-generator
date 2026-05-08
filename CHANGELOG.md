@@ -1,3 +1,17 @@
+2.0.5 / 08.05.2026
+==================
+
+* Added TypeScript types.
+
+* Renamed `compress()` function to `minify()`.
+  * The `compress()` function name is still available but is considered deprecated.
+
+* Changed the arguments of `generate()` function.
+  * The second argument is now an `options` object. The old way of passing arguments still works but is considered deprecated.
+
+* Renamed the command-line parameters. Added new ones.
+  * The old parameter names still work but are considered deprecated.
+
 2.0.0 / 20.08.2025
 ==================
 

@@ -1,5 +1,8 @@
 import { parseString } from 'xml2js'
 
+// Metadata format version.
+import VERSION from './version.js'
+
 // Should be the same as `DIGIT_PLACEHOLDER` in `libphonenumber-js`.
 const DIGIT_PLACEHOLDER = 'x'
 
@@ -157,7 +160,48 @@ const PHONE_NUMBER_TYPES = [
 // therefore the modules wouldn't be strictly "pure"
 // so maybe `country_calling_codes` stays as part of metadata.
 //
-export default function(xmlString, version, includedCountries, extended, includedPhoneNumberTypes) {
+export default function(xmlString, arg1, arg2, arg3, arg4) {
+	// Convert legacy options being separate arguments
+	// to new options being a single argument (object).
+	let version
+	let includedCountries
+	let includeAllPhoneNumberTypes
+	let includedPhoneNumberTypes
+	let includePhoneNumberTypeExamples
+	// When no arguments were passed (aside from metadata XML) then it's assumed to be a case of
+	// new `options` object argument rather than a case of legacy parameters.
+	// It is still possible that it's a case of legacy arguments which just aren't passed,
+	// but in that case the only "breaking change" would be that phone number examples aren't present,
+	// and the consuming application would notice that when attempting to access `examples` object properties
+	// because a `TypeError` would be thrown: Cannot read properties of undefined (reading 'mobile').
+	// Such "breaking change" would only be possible if someone used `generate()` function
+	// without further minification via `compress()` function, so it wouldn't be the mainstream way
+	// of using this package, because the mainstream way is the command-line-interface one, and it always minijfied,
+	// and minification removes example phone numbers anyway, not to mention that it still passed the `extended: true/false` argument,
+	// and also not to mention that the README of `generate()` function specifically instructs `version: number` argument to be passed.
+	if (arg1 === undefined && arg2 === undefined && arg3 === undefined && arg4 === undefined) {
+		arg1 = {}
+	}
+	// New options — object.
+	if (isObject(arg1)) {
+		// Validate `phoneNumberTypes` parameter.
+		if (arg1.phoneNumberTypes && !arg1.withPhoneNumberTypes) {
+			throw new Error('`phoneNumberTypes` parameter requires `withPhoneNumberTypes: true` parameter')
+		}
+		version = VERSION
+		includedCountries = arg1.countries
+		includeAllPhoneNumberTypes = arg1.withPhoneNumberTypes && !arg1.phoneNumberTypes
+		includedPhoneNumberTypes = arg1.phoneNumberTypes
+		includePhoneNumberTypeExamples = arg1.withPhoneNumberTypeExamples
+	} else {
+		// Legacy options — separate arguments.
+		version = arg1
+		includedCountries = arg2
+		includeAllPhoneNumberTypes = arg3
+		includedPhoneNumberTypes = arg4
+		includePhoneNumberTypeExamples = true
+	}
+
 	// Validate `includedPhoneNumberTypes`
 	if (includedPhoneNumberTypes) {
 		for (const _type of includedPhoneNumberTypes) {
@@ -184,8 +228,17 @@ export default function(xmlString, version, includedCountries, extended, include
 			const country_code = territory.$.id
 
 			// Skip this country if it has not been explicitly included
-			if (includedCountries && !includedCountries.has(country_code)) {
-				continue
+			if (includedCountries) {
+				if (Array.isArray(includedCountries)) {
+					if (!includedCountries.includes(country_code)) {
+						continue
+					}
+				} else {
+					// Legacy argument type: `Set`.
+					if (!includedCountries.has(country_code)) {
+						continue
+					}
+				}
 			}
 
 			if (territory.$.nationalPrefixOptionalWhenFormatting) {
@@ -198,7 +251,7 @@ export default function(xmlString, version, includedCountries, extended, include
 
 				// Phone code for phone numbers in this country.
 				//
-				// E.g. `1` for both USA and Canada.
+				// E.g. `"1"` for both USA and Canada.
 				//
 				phone_code: territory.$.countryCode,
 
@@ -216,8 +269,8 @@ export default function(xmlString, version, includedCountries, extended, include
 				// whether it belongs to a certain country.
 				//
 				// E.g. for Antigua and Barbuda
-				// country phone code is `1` (same as USA)
-				// and leading digits are `268`.
+				// country phone code is `"1"` (same as USA)
+				// and leading digits are `"268"`.
 				//
 				leading_digits: territory.$.leadingDigits,
 
@@ -282,9 +335,8 @@ export default function(xmlString, version, includedCountries, extended, include
 				// matching phone number pattern `(\d{2})(\d{6})` with format `$1 $2`
 				// is written as a local phone number `(0xx) xxxxxx`.
 				//
-				// Can be `undefined`.
-				//
-				// Maybe rename this property to `national_prefix_transform_rule`.
+				// As of 2026, this property seems to have been moved from country-wide level
+				// to an individual `format` level.
 				//
 				national_prefix_formatting_rule: getNationalPrefixFormattingRule(territory.$.nationalPrefixFormattingRule, territory.$.nationalPrefix),
 
@@ -309,6 +361,9 @@ export default function(xmlString, version, includedCountries, extended, include
 				// need to be dialed with a carrier code when called within Brazil.
 				// Without that, most of the carriers won't connect the call.
 				//
+				// As of 2026, this property seems to have been moved from country-wide level
+				// to an individual `format` level.
+				//
 				domestic_carrier_code_formatting_rule: territory.$.carrierCodeFormattingRule,
 
 				// These `types` will be discared later if they're not needed (which is most likely).
@@ -316,10 +371,10 @@ export default function(xmlString, version, includedCountries, extended, include
 				// In such cases, it's not possible to determine the country of a phone number just by its "calling code" part,
 				// and it has to be matched against each "candidate" country by either its `leading_digits` or by its `types` reg exps.
 				//
-				types: get_PHONE_NUMBER_TYPES(territory),
+				types: getPhoneNumberTypes(territory),
 
-				// Will be filtered out during compression phase
-				examples: get_phone_number_examples(territory)
+				// Will be filtered out during minification phase
+				examples: includePhoneNumberTypeExamples ? get_phone_number_examples(territory) : undefined
 			}
 
 			// Check that national (significant) phone number pattern
@@ -344,6 +399,7 @@ export default function(xmlString, version, includedCountries, extended, include
 			if (territory.availableFormats) {
 				country.formats = territory.availableFormats[0].numberFormat.map((number_format) => ({
 					pattern: number_format.$.pattern,
+					// There could be multiple `<leadingDigits/>` elements inside a given `<format/>` element.
 					leading_digits_patterns: number_format.leadingDigits ? number_format.leadingDigits.map(leading_digits => leading_digits.replace(/\s/g, '')) : undefined,
 					national_prefix_formatting_rule: getNationalPrefixFormattingRule(number_format.$.nationalPrefixFormattingRule, territory.$.nationalPrefix),
 					national_prefix_is_optional_when_formatting: number_format.$.nationalPrefixOptionalWhenFormatting ? Boolean(number_format.$.nationalPrefixOptionalWhenFormatting) : undefined,
@@ -459,13 +515,22 @@ export default function(xmlString, version, includedCountries, extended, include
 				}
 			}
 
-			// Discard `types` regular expressions (they are huge)
-			// when they're not needed when determining phone number country.
-			// E.g. when there's a one-to-one correspondence
-			// between a country phone code and a country code
-			const all_types_required = country_codes.length > 1
+			// `types` regular expressions are huge, and they're not only used to
+			// determine phone number type, but also to determine which country
+			// a phone number belongs to when there's an "ambiguity" situation,
+			// i.e. when there're multiple countries sharing the same "calling code".
+			//
+			// For example, US and Canada share the same `+1` "calling code"
+			// and it's not really possible to tell which one of them
+			// owns a given `+1...` phone number until all their `types` regular exporessions
+			// have been run.
+			//
+			// That means that `types` regular expresssions could only be omitted
+			// when there're no multiple countries that share a given "calling code".
+			//
+			const allTypeRegExpsAreRequired = country_codes.length > 1
 
-			if (!extended && !includedPhoneNumberTypes && !all_types_required) {
+			if (!includeAllPhoneNumberTypes && !includedPhoneNumberTypes && !allTypeRegExpsAreRequired) {
 				// console.log(`Won't include the regular expressions for different phone number types for country ${country_code} because it doesn't share its calling code with any other country, and, therefore, the regular expressions for different phone number types won't have to be used for country matching`)
 				delete countries[country_codes[0]].types
 				continue
@@ -473,10 +538,13 @@ export default function(xmlString, version, includedCountries, extended, include
 
 			for (const country_code of country_codes) {
 				// Leading digits for a country are sufficient
-				// to resolve country phone code ambiguity.
+				// to resolve the "calling code" ambiguity,
+				// i.e. when multiple countries share the same "calling code".
+				//
 				// So retaining all phone number type regular expressions
 				// is not required in this case.
-				if (!extended && !includedPhoneNumberTypes) {
+				//
+				if (!includeAllPhoneNumberTypes && !includedPhoneNumberTypes) {
 					if (countries[country_code].leading_digits) {
 						// console.log(`Won't include the regular expressions for different phone number types for country ${country_code} because even though it does share its calling code with other countries, it also has leading digits specified, and, therefore, the regular expressions for different phone number types won't have to be used for country matching`)
 						delete countries[country_code].types
@@ -484,6 +552,7 @@ export default function(xmlString, version, includedCountries, extended, include
 					}
 				}
 
+				// `types` will potentially be mutated
 				const types = countries[country_code].types
 
 				// Find duplicate regular expressions for types
@@ -498,8 +567,15 @@ export default function(xmlString, version, includedCountries, extended, include
 					// Retain regular expressions just for the
 					// specified phone number types (if configured).
 					if (includedPhoneNumberTypes) {
-						if (!includedPhoneNumberTypes.has(_type)) {
-							delete types[_type]
+						if (Array.isArray(includedPhoneNumberTypes)) {
+							if (!includedPhoneNumberTypes.includes(_type)) {
+								delete types[_type]
+							}
+						} else {
+							// Legacy argument type: `Set`.
+							if (!includedPhoneNumberTypes.has(_type)) {
+								delete types[_type]
+							}
 						}
 					}
 					// Remove redundant types
@@ -538,7 +614,7 @@ function getNationalPrefixFormattingRule(rule, national_prefix) {
 }
 
 // Extracts various phone number type patterns from country XML metadata
-function get_PHONE_NUMBER_TYPES(territory) {
+function getPhoneNumberTypes(territory) {
 	return PHONE_NUMBER_TYPES.reduce((output, type) => {
 		const camel_cased_type = underscoreToCamelCase(type)
 		const pattern = territory[camel_cased_type] && territory[camel_cased_type][0].nationalNumberPattern[0].replace(/\s/g, '')
@@ -696,4 +772,9 @@ function parseXmlString(xmlString) {
 			resolve(result)
 		})
 	})
+}
+
+const objectConstructor = {}.constructor
+function isObject(object) {
+  return object !== undefined && object !== null && object.constructor === objectConstructor
 }
